@@ -1,0 +1,52 @@
+README
+######
+
+:Homepage: https://github.com/romain-dartigues/ansible-netdata
+:License: BSD 3-Clause
+
+Deploy `netdata <https://my-netdata.io/>`_
+(`:octocat: <https://github.com/firehol/netdata>`_) through ansible with
+ability to configure and switch master.
+
+Contributions and suggestions welcome.
+
+Requirements
+============
+
+* ``inventory_hostname`` should be a FQDN and *must* be consistent with
+  ``netdata_stream_master``, ``netdata_stream_host``
+* tested with ``ansible`` 2.5 and CentOS 7
+
+Configuration
+=============
+
++---------------------------+-----------------------------------------------+
+| ``netdata_url_base``      | base URL where to download netdata            |
++---------------------------+-----------------------------------------------+
+| ``netdata_url_latest``    | a file containing the base name               |
+|                           | of the latest version                         |
++---------------------------+-----------------------------------------------+
+| ``netdata_installer_uri`` | URI of the latest package                     |
++---------------------------+-----------------------------------------------+
+
+.. Note::
+   The ``netdata_latest_package`` variable is set within the task
+   from the content of ``netdata_url_base``.
+
+Streaming
+---------
+
++-------------------------+--------------------------------------------+
+| ``netdata_master``      | hostname to contact the master;            |
+|                         | or ``netdata_master_host`` if unset        |
++-------------------------+--------------------------------------------+
+| ``netdata_master_host`` | name of the master                         |
++-------------------------+--------------------------------------------+
+| ``netdata_stream_uuid`` | UUID used by clients to connect the master |
++-------------------------+--------------------------------------------+
+
+Credits
+=======
+
+I'm not affiliated in any ways with `FireHOL <https://firehol.org/>`_
+(but admirative about their work ♥).

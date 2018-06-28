@@ -1,0 +1,240 @@
+---
+
+- fail:
+    msg: 'unsupported OS version: {{ ansible_distribution_major_version }}'
+  when:
+    - ansible_distribution_major_version <= 7
+  tags:
+    - netdata
+
+- name: 'netdata: packages'
+  block:
+    - package:
+        name: '{{ item }}'
+        state: 'present'
+      with_items:
+        - hddtemp
+        - smartmontools
+
+    - systemd:
+        name: '{{ item }}'
+        enabled: yes
+        state: 'started'
+      with_items:
+        - hddtemp
+        - smartd
+
+    - name: 'netdata: smart: directory'
+      file:
+        path: '/var/log/smartd/'
+        state: 'directory'
+        owner: 'root'
+        group: 'root'
+        mode: '0755'
+
+    - name: 'netdata: smart: config'
+      lineinfile:
+        path: '/etc/sysconfig/smartmontools'
+        regexp: '^smartd_opts='
+        line: 'smartd_opts="-q never -i 600 -A /var/log/smartd/"'
+      notify:
+        - 'reload smartd'
+        - 'reload netdata'
+
+  when:
+    - ansible_virtualization_role == "host"
+  tags:
+    - netdata
+
+- block:
+    - name: 'netdata: check version'
+      command: '/opt/netdata/bin/netdata -V'
+      register: command
+      failed_when: false
+      changed_when: false
+
+    - set_fact:
+        local_netdata_version: '{{ command.stdout.partition(" ")[-1] }}'
+      when:
+        - not ansible_check_mode
+        - command.rc == 0
+
+    - set_fact:
+        netdata_latest_package: "{{ lookup('url', netdata_url_latest) }}"
+      run_once: true
+      delegate_to: localhost
+
+    - set_fact:
+        netdata_latest_version: "{{ netdata_latest_package.partition('-v')[-1] }}"
+      run_once: true
+      delegate_to: localhost
+
+  tags:
+    - netdata
+
+- name: 'netdata: installation/upgrade'
+  block:
+
+    - tempfile:
+        state: "file"
+        suffix: "netdata.gz.run"
+      register: "netdata_package_local"
+
+    - name: 'netdata: get package'
+      get_url:
+        url: '{{ netdata_installer_uri }}'
+        dest: '{{ netdata_package_local.path }}'
+        force: 'yes'
+
+    - name: 'netdata: install/upgrade'
+      command: '/bin/sh {{ netdata_package_local.path }} --quiet --accept'
+
+    - name: 'netdata: configuration: fetch latest'
+      get_url:
+        url: 'http://localhost:19999/netdata.conf'
+        dest: '/opt/netdata/etc/netdata/netdata.conf'
+        force: 'yes'
+
+  when:
+    - not ansible_check_mode
+    - local_netdata_version is not defined
+      or
+      local_netdata_version is version_compare(netdata_latest_version, '<')
+  always:
+    - file:
+        path: '{{ netdata_package_local.path }}'
+        state: "absent"
+  tags:
+    - netdata
+
+- name: 'netdata: configuration'
+  block:
+
+    - systemd:
+        name: 'netdata'
+        enabled: yes
+        daemon_reload: yes
+
+    - name: 'netdata: configuration: main'
+      ini_file:
+        create: 'no'
+        path: '/opt/netdata/etc/netdata/netdata.conf'
+        section: '{{ item.section }}'
+        option: '{{ item.option }}'
+        value: '{{ item.value }}'
+      with_items:
+        - { section: 'global', option: 'update every', value: '10' }
+        - section: 'plugin:proc:diskspace'
+          option: 'exclude space metrics on paths'
+          value: '/dev/* /proc/* /sys/* /var/run/user/* /var/lib/docker/*'
+        - section: 'plugin:proc:diskspace'
+          option: 'exclude space metrics on filesystems'
+          value: 'autofs devtmpfs nfs nfsd nsfs tmpfs'
+        - section: 'plugin:proc:/proc/net/dev'
+          option: 'disable by default interfaces matching'
+          value: 'lo fireqos* *-ifb ifb* br-* veth* teql* docker*'
+        - section: 'plugin:proc:/proc/diskstats'
+          option: 'exclude disks'
+          value: 'loop* ram* dm* docker*'
+      notify:
+        - 'reload netdata'
+
+    - name: 'netdata: configuration: disable alert mails'
+      lineinfile:
+        path: '/opt/netdata/etc/netdata/health_alarm_notify.conf'
+        regexp: '^SEND_EMAIL='
+        line: 'SEND_EMAIL="NO"'
+      notify:
+        - 'reload netdata'
+
+  tags:
+    - netdata
+
+- name: 'netdata: configuration: streaming'
+  block:
+
+    - name: 'netdata: configuration: master to slave'
+      ini_file:
+        path: '/opt/netdata/etc/netdata/stream.conf'
+        section: '{{ netdata_stream_uuid }}'
+        state: 'absent'
+      when:
+        - inventory_hostname != netdata_master_host
+      notify:
+        - 'reload netdata'
+
+    - name: 'netdata: configuration: master'
+      ini_file:
+        path: '/opt/netdata/etc/netdata/stream.conf'
+        section: '{{ item.section }}'
+        option: '{{ item.option }}'
+        value: '{{ item.value }}'
+      with_items:
+        - { section: 'stream', option: 'enabled', value: 'no' }
+        - { section: '{{ netdata_stream_uuid }}', option: 'enabled', value: 'yes' }
+        - { section: '{{ netdata_stream_uuid }}', option: 'allow from', value: '*' }
+        - { section: '{{ netdata_stream_uuid }}', option: 'history', value: '3600' }
+        - { section: '{{ netdata_stream_uuid }}', option: 'memory mode', value: 'save' }
+        - { section: '{{ netdata_stream_uuid }}', option: 'health enabled', value: 'yes' }
+        - { section: '{{ netdata_stream_uuid }}', option: 'postpone alarms on connect seconds', value: '60' }
+      when:
+        - inventory_hostname == netdata_master_host
+      notify:
+        - 'reload netdata'
+
+    - name: 'netdata: configuration: slave'
+      ini_file:
+        path: '/opt/netdata/etc/netdata/stream.conf'
+        section: '{{ item.section }}'
+        option: '{{ item.option }}'
+        value: '{{ item.value }}'
+      with_items:
+        - { section: 'stream', option: 'enabled', value: 'yes' }
+        - { section: 'stream', option: 'destination', value: '{{ netdata_master }}' }
+        - { section: 'stream', option: 'api key', value: '{{ netdata_stream_uuid }}' }
+      when:
+        - inventory_hostname != netdata_master_host
+      notify:
+        - 'reload netdata'
+
+  when:
+    - netdata_master_host|default()
+    - netdata_stream_uuid|default()
+  tags:
+    - netdata
+
+- name: 'netdata: logrotate (issue #2794)'
+  # https://github.com/firehol/netdata/issues/2794
+  lineinfile:
+    path: '/etc/logrotate.d/netdata'
+    line: '  su netdata netdata'
+    regexp: '^\s*su\s+netdata'
+    insertafter: '[{]'
+    validate: '/sbin/logrotate -d %s'
+  tags:
+    - netdata
+
+- name: 'netdata: selinux (issue #2794)'
+  block:
+    - name: 'netdata: selinux: install ansible dependencies'
+      yum:
+        name: '{{ item}}'
+        state: 'present'
+      with_items:
+        - libselinux-python
+        - policycoreutils-python
+
+    - name: 'netdata: selinux: allow'
+      sefcontext:
+        target: "/opt/netdata/var/log/netdata(/.*)?"
+        ftype: "a"
+        setype: "var_log_t"
+        state: "present"
+        reload: "yes"
+
+  when:
+    - ansible_selinux is defined
+    - ansible_selinux.mode == 'enforcing'
+  tags: ["netdata"]
+
+...

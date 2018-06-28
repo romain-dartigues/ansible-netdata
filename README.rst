@@ -45,6 +45,23 @@ Streaming
 | ``netdata_stream_uuid`` | UUID used by clients to connect the master |
 +-------------------------+--------------------------------------------+
 
+Example Playbook
+================
+
+.. code-block:: yaml
+
+    - hosts:
+         - foo.example.net
+         - bar.example.net
+         - xyz.example.net
+      vars:
+        ansible_master: "netdata.example.net"
+        ansible_master_host: "foo.example.net"
+        netdata_stream_uuid: "e512bb7d-2514-4ff3-9022-e25645e96503"
+      roles:
+        - netdata
+
+
 Credits
 =======
 

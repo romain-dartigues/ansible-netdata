@@ -1,5 +1,9 @@
 ---
 
+netdata_required_packages:
+  - hddtemp
+  - smartmontools
+
 netdata_url_base: "https://raw.githubusercontent.com/firehol/binary-packages/master"
 netdata_url_latest: "{{ netdata_url_base }}/netdata-latest.gz.run"
 # variable netdata_latest_package is set in task

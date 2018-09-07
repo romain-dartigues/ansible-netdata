@@ -24,6 +24,8 @@ galaxy_info:
   - name: RedHat
     versions:
     - 7
+  - name: Debian
+
 
   galaxy_tags:
   - netdata

@@ -75,7 +75,7 @@
       get_url:
         url: '{{ netdata_installer_uri }}'
         dest: '{{ netdata_package_local.path }}'
-        force: 'yes'
+        force: true
 
     - name: 'netdata: install/upgrade'
       command: '/bin/sh {{ netdata_package_local.path }} --quiet --accept'
@@ -84,7 +84,7 @@
       get_url:
         url: 'http://localhost:19999/netdata.conf'
         dest: '/opt/netdata/etc/netdata/netdata.conf'
-        force: 'yes'
+        force: true
 
   when:
     - not ansible_check_mode
@@ -223,7 +223,7 @@
         ftype: "a"
         setype: "var_log_t"
         state: "present"
-        reload: "yes"
+        reload: true
 
   when:
     - ansible_selinux is defined

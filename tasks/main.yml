@@ -1,11 +1,5 @@
 ---
 
-- fail:
-    msg: "unsupported OS: {{ ansible_distribution_file_variety }}"
-  when:
-    - ansible_distribution_file_variety not in ["RedHat", "Debian"]
-
-
 - block:
     - include: "{{ ansible_distribution_file_variety }}.yml"
   rescue:

@@ -1,10 +1,15 @@
 ---
 
-- block:
-    - include: "{{ ansible_distribution_file_variety }}.yml"
-  rescue:
-    - debug:
-        msg: "OS unsupported by role: {{ ansible_distribution_file_variety }}"
+- import_tasks: "mainstream.yml"
+  when:
+    - ansible_distribution_file_variety in ["Debian", "RedHat"]
+  tags:
+    - netdata
+
+- fail:
+    msg: "OS unsupported by role: {{ ansible_distribution_file_variety }}"
+  when:
+    - not ansible_distribution_file_variety in ["Debian", "RedHat"]
   tags:
     - netdata
 

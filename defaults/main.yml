@@ -13,4 +13,8 @@ netdata_master: "{{ netdata_master_host }}"
 netdata_master_host:
 netdata_stream_uuid:
 
+netdata_sysconfdir:
+  Debian: /etc/default
+  RedHat: /etc/sysconfig
+
 ...

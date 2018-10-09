@@ -98,6 +98,26 @@
   tags:
     - netdata
 
+- name: 'configuration: ensure files are present'
+  block:
+    - stat:
+        get_attributes: false
+        get_checksum: false
+        get_mime: false
+        path: '/opt/netdata/etc/netdata/{{ item }}'
+      with_items:
+        - health_alarm_notify.conf
+        - stream.conf
+      register: _result
+
+    - copy:
+        src: '/opt/netdata/usr/lib/netdata/conf.d/{{ item.item }}'
+        dest: '{{ item.invocation.module_args.path }}'
+        remote_src: true
+      with_items: '{{ _result.results }}'
+      when:
+        - not item.stat.exists
+
 - name: 'netdata: configuration'
   block:
 
@@ -204,6 +224,8 @@
     regexp: '^\s*su\s+netdata'
     insertafter: '[{]'
     validate: '/sbin/logrotate -d %s'
+  when:
+    - local_netdata_version|default(0) is version_compare(10, '<')
   tags:
     - netdata
 
@@ -226,6 +248,7 @@
         reload: true
 
   when:
+    - local_netdata_version|default(0) is version_compare(10, '<')
     - ansible_selinux is defined
     - ansible_selinux.mode == 'enforcing'
   tags: ["netdata"]

@@ -1,0 +1,34 @@
+---
+
+# https://github.com/firehol/netdata/issues/2794
+- name: 'netdata: logrotate (issue #2794)'
+  lineinfile:
+    path: '/etc/logrotate.d/netdata'
+    line: '  su netdata netdata'
+    regexp: '^\s*su\s+netdata'
+    insertafter: '[{]'
+    validate: '/sbin/logrotate -d %s'
+  when:
+    - local_netdata_version|default(0) is version_compare(10, '<')
+  tags: ["netdata"]
+
+- name: 'netdata: selinux: install ansible dependencies'
+  package:
+    name: '{{ netdata_ansible_selinux_packages[ansible_distribution_file_variety] }}'
+    state: 'present'
+  tags: ["netdata"]
+
+- name: 'netdata: selinux: allow'
+  sefcontext:
+    target: "/opt/netdata/var/log/netdata(/.*)?"
+    ftype: "a"
+    setype: "var_log_t"
+    state: "present"
+    reload: true
+  when:
+    - local_netdata_version|default(0) is version_compare(10, '<')
+    - ansible_selinux.mode is defined
+    - ansible_selinux.modei == 'enforcing'
+  tags: ["netdata"]
+
+...

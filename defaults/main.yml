@@ -4,6 +4,14 @@ netdata_required_packages:
   - hddtemp
   - smartmontools
 
+netdata_ansible_selinux_packages:
+  Debian:
+    - python-selinux
+    - policycoreutils-python-utils
+  RedHat:
+    - libselinux-python
+    - policycoreutils-python
+
 netdata_url_base: "https://raw.githubusercontent.com/firehol/binary-packages/master"
 netdata_url_latest: "{{ netdata_url_base }}/netdata-latest.gz.run"
 # variable netdata_latest_package is set in task

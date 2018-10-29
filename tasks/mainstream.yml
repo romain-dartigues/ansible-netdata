@@ -10,9 +10,8 @@
 - name: 'netdata: packages'
   block:
     - package:
-        name: '{{ item }}'
+        name: '{{ netdata_required_packages }}'
         state: 'present'
-      with_items: "{{ netdata_required_packages }}"
 
     - systemd:
         name: '{{ item }}'
@@ -240,11 +239,10 @@
   block:
     - name: 'netdata: selinux: install ansible dependencies'
       yum:
-        name: '{{ item}}'
+        name:
+          - libselinux-python
+          - policycoreutils-python
         state: 'present'
-      with_items:
-        - libselinux-python
-        - policycoreutils-python
 
     - name: 'netdata: selinux: allow'
       sefcontext:

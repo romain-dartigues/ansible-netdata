@@ -1,0 +1,53 @@
+---
+
+- name: 'download and install'
+  block:
+    - name: 'create a temporary file on the host'
+      tempfile:
+        state: "file"
+        suffix: "netdata.gz.run"
+      register: "_netdata_gz_run"
+
+    - name: 'get package: on the ansible machine for when the host does *not* have internet access'
+      when: netdata_dmz is defined and netdata_dmz | bool
+      get_url:
+        url: '{{ netdata_installer_uri }}'
+        dest: '{{ playbook_dir }}/{{ netdata_latest_package }}'
+      run_once: true
+      delegate_to: localhost
+
+    - name: 'get package: upload from ansible machine to host'
+      when: netdata_dmz is defined and netdata_dmz | bool
+      copy:
+        src: '{{ playbook_dir }}/{{ netdata_latest_package }}'
+        dest: '{{ _netdata_gz_run.path }}'
+
+    - name: 'get package: on the host when it *does* have internet access'
+      when: netdata_dmz is not defined or not netdata_dmz | bool
+      get_url:
+        url: '{{ netdata_installer_uri }}'
+        dest: '{{ _netdata_gz_run.path }}'
+        force: true
+
+    - name: 'run the install/upgrade process'
+      command: '/bin/sh {{ _netdata_gz_run.path }} --quiet --accept'
+
+    - name: 'configuration: fetch latest'
+      get_url:
+        url: 'http://localhost:19999/netdata.conf'
+        dest: '/opt/netdata/etc/netdata/netdata.conf'
+        force: true
+
+  when:
+    - not ansible_check_mode
+    - local_netdata_version is not defined
+      or
+      local_netdata_version is version_compare(netdata_latest_version, '<')
+  always:
+    - name: 'remove temporary file'
+      file:
+        path: '{{ _netdata_gz_run.path }}'
+        state: "absent"
+  tags: ['netdata']
+
+...

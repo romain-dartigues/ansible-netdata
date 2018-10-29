@@ -69,40 +69,9 @@
   tags:
     - netdata
 
-- name: 'netdata: installation/upgrade'
-  block:
-
-    - tempfile:
-        state: "file"
-        suffix: "netdata.gz.run"
-      register: "netdata_package_local"
-
-    - name: 'netdata: get package'
-      get_url:
-        url: '{{ netdata_installer_uri }}'
-        dest: '{{ netdata_package_local.path }}'
-        force: true
-
-    - name: 'netdata: install/upgrade'
-      command: '/bin/sh {{ netdata_package_local.path }} --quiet --accept'
-
-    - name: 'netdata: configuration: fetch latest'
-      get_url:
-        url: 'http://localhost:19999/netdata.conf'
-        dest: '/opt/netdata/etc/netdata/netdata.conf'
-        force: true
-
-  when:
-    - not ansible_check_mode
-    - local_netdata_version is not defined
-      or
-      local_netdata_version is version_compare(netdata_latest_version, '<')
-  always:
-    - file:
-        path: '{{ netdata_package_local.path }}'
-        state: "absent"
-  tags:
-    - netdata
+- name: 'installation/upgrade'
+  tags: ['netdata']
+  import_tasks: 'download_and_install.yml'
 
 - name: 'configuration: ensure files are present'
   block:

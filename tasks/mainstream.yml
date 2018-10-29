@@ -191,40 +191,21 @@
   tags:
     - netdata
 
-- name: 'netdata: logrotate (issue #2794)'
-  # https://github.com/firehol/netdata/issues/2794
-  lineinfile:
-    path: '/etc/logrotate.d/netdata'
-    line: '  su netdata netdata'
-    regexp: '^\s*su\s+netdata'
-    insertafter: '[{]'
-    validate: '/sbin/logrotate -d %s'
+- name: 'selinux: check if loaded'
+  stat:
+    path: '/sys/fs/selinux'
+    get_attributes: false
+    get_checksum: false
+    get_md5: false
+    get_mime: false
+  register: _sys_fs_selinux
+  tags: ['netdata']
+
+- name: 'selinux: workarounds'
+  import_tasks: 'wa-selinux.yml'
   when:
-    - local_netdata_version|default(0) is version_compare(10, '<')
-  tags:
-    - netdata
-
-- name: 'netdata: selinux (issue #2794)'
-  block:
-    - name: 'netdata: selinux: install ansible dependencies'
-      yum:
-        name:
-          - libselinux-python
-          - policycoreutils-python
-        state: 'present'
-
-    - name: 'netdata: selinux: allow'
-      sefcontext:
-        target: "/opt/netdata/var/log/netdata(/.*)?"
-        ftype: "a"
-        setype: "var_log_t"
-        state: "present"
-        reload: true
-
-  when:
-    - local_netdata_version|default(0) is version_compare(10, '<')
-    - ansible_selinux is defined
-    - ansible_selinux.mode == 'enforcing'
-  tags: ["netdata"]
+    - _sys_fs_selinux.stat.exists is defined
+    - _sys_fs_selinux.stat.exists
+  tags: ['netdata']
 
 ...

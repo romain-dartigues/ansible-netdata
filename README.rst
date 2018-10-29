@@ -21,6 +21,9 @@ Configuration
 =============
 
 +---------------------------+-----------------------------------------------+
+| ``netdata_dmz``           | if set, will download netdata package through |
+|                           | the ansible host                              |
++---------------------------+-----------------------------------------------+
 | ``netdata_url_base``      | base URL where to download netdata            |
 +---------------------------+-----------------------------------------------+
 | ``netdata_url_latest``    | a file containing the base name               |

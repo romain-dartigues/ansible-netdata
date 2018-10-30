@@ -213,4 +213,15 @@
     - _sys_fs_selinux.stat.exists
   tags: ['netdata']
 
+# https://github.com/netdata/netdata/issues/827
+# http://www.novell.com/support/kb/doc.php?id=7010449
+# https://github.com/prometheus/node_exporter/issues/903
+- name: "blacklist acpi_power_meter which doesn't work anyway on affected HP servers due to a BIOS bug"
+  when: ansible_facts.system_vendor == "HP"
+  lineinfile:
+    create: true
+    mode: 0644
+    path: '/etc/modprobe.d/hwmon.conf'
+    line: 'blacklist acpi_power_meter'
+
 ...

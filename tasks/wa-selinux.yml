@@ -28,7 +28,7 @@
   when:
     - local_netdata_version|default(0) is version_compare(10, '<')
     - ansible_selinux.mode is defined
-    - ansible_selinux.modei == 'enforcing'
+    - ansible_selinux.mode == 'enforcing'
   tags: ["netdata"]
 
 ...

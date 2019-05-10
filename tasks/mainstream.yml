@@ -49,7 +49,7 @@
     - netdata
 
 - block:
-    - name: 'netdata: check version'
+    - name: 'netdata: check local version'
       command: '/opt/netdata/bin/netdata -V'
       register: command
       failed_when: false
@@ -60,19 +60,43 @@
       when:
         - not ansible_check_mode
         - command.rc == 0
+  tags:
+    - netdata
 
+- name: 'netdata: get version from package name'
+  when:
+    - netdata_package_uri
+  run_once: true
+  delegate_to: localhost
+  tags: ['netdata']
+  block:
     - set_fact:
-        netdata_latest_package: "{{ lookup('url', netdata_url_latest) }}"
-      run_once: true
-      delegate_to: localhost
+        netdata_latest_package: "{{ netdata_package_uri | basename }}"
 
     - set_fact:
         netdata_latest_version: "{{ netdata_latest_package.partition('-v')[-1] }}"
-      run_once: true
-      delegate_to: localhost
 
-  tags:
-    - netdata
+
+- name: 'netdata: get version from GitHub'
+  when:
+    - not netdata_package_uri
+  run_once: true
+  delegate_to: localhost
+  tags: ['netdata']
+  block:
+    - name: 'get informations from GitHub'
+      set_fact:
+        _netdata_GitHub: "{{ lookup('url', 'https://api.github.com/repos/netdata/netdata/releases/latest') }}"
+
+    - set_fact:
+        netdata_latest_version: "{{ _netdata_latest.tag_name.lstrip('v') }}"
+
+    - set_fact:
+        netdata_package_uri: '{{ item.browser_download_url }}'
+        netdata_latest_package: '{{ item.name }}'
+      with_items: '{{ _netdata_latest.assets }}'
+      when:
+        - item.name.endswith(".run")
 
 - name: 'installation/upgrade'
   tags: ['netdata']

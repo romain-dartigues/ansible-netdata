@@ -12,10 +12,7 @@ netdata_ansible_selinux_packages:
     - libselinux-python
     - policycoreutils-python
 
-netdata_url_base: "https://raw.githubusercontent.com/firehol/binary-packages/master"
-netdata_url_latest: "{{ netdata_url_base }}/netdata-latest.gz.run"
-# variable netdata_latest_package is set in task
-netdata_installer_uri: "{{ netdata_url_base }}/{{ netdata_latest_package }}"
+netdata_package_uri: null
 
 netdata_master: "{{ netdata_master_host }}"
 netdata_master_host:

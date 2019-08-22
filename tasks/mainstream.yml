@@ -86,7 +86,7 @@
   block:
     - name: 'get informations from GitHub'
       set_fact:
-        _netdata_GitHub: "{{ lookup('url', 'https://api.github.com/repos/netdata/netdata/releases/latest') }}"
+        _netdata_latest: "{{ lookup('url', 'https://api.github.com/repos/netdata/netdata/releases/latest') | from_json }}"
 
     - set_fact:
         netdata_latest_version: "{{ _netdata_latest.tag_name.lstrip('v') }}"

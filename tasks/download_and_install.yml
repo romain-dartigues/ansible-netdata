@@ -42,7 +42,7 @@
     - not ansible_check_mode
     - local_netdata_version is not defined
       or
-      local_netdata_version is version_compare(netdata_latest_version, '<')
+      local_netdata_version|int is version_compare(netdata_latest_version, '<')
   always:
     - name: 'remove temporary file'
       file:

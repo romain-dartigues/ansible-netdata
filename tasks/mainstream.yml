@@ -65,7 +65,7 @@
 
 - name: 'netdata: get version from package name'
   when:
-    - netdata_package_uri
+    - netdata_package_uri|bool
   run_once: true
   delegate_to: localhost
   tags: ['netdata']
@@ -79,7 +79,7 @@
 
 - name: 'netdata: get version from GitHub'
   when:
-    - not netdata_package_uri
+    - not netdata_package_uri|bool
   run_once: true
   delegate_to: localhost
   tags: ['netdata']

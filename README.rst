@@ -20,21 +20,14 @@ Requirements
 Configuration
 =============
 
-+---------------------------+-----------------------------------------------+
-| ``netdata_dmz``           | if set, will download netdata package through |
-|                           | the ansible host                              |
-+---------------------------+-----------------------------------------------+
-| ``netdata_url_base``      | base URL where to download netdata            |
-+---------------------------+-----------------------------------------------+
-| ``netdata_url_latest``    | a file containing the base name               |
-|                           | of the latest version                         |
-+---------------------------+-----------------------------------------------+
-| ``netdata_installer_uri`` | URI of the latest package                     |
-+---------------------------+-----------------------------------------------+
-
-.. Note::
-   The ``netdata_latest_package`` variable is set within the task
-   from the content of ``netdata_url_base``.
++-------------------------+-------------------------------------------------+
+| ``netdata_dmz``         | if set, will download netdata package through   |
+|                         | the ansible host                                |
++-------------------------+-------------------------------------------------+
+| ``netdata_package_uri`` | URI of the latest package; when unset           |
+|                         | (default) will guess it from GitHub. This is    |
+|                         | only useful if you have a local mirror.         |
++-------------------------+-------------------------------------------------+
 
 Streaming
 ---------

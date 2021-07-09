@@ -11,7 +11,7 @@
     - name: 'get package: on the ansible machine for when the host does *not* have internet access'
       when: netdata_dmz is defined and netdata_dmz | bool
       get_url:
-        url: '{{ netdata_installer_uri }}'
+        url: '{{ netdata_package_uri }}'
         dest: '{{ playbook_dir }}/{{ netdata_latest_package }}'
       run_once: true
       delegate_to: localhost
@@ -25,7 +25,7 @@
     - name: 'get package: on the host when it *does* have internet access'
       when: netdata_dmz is not defined or not netdata_dmz | bool
       get_url:
-        url: '{{ netdata_installer_uri }}'
+        url: '{{ netdata_package_uri }}'
         dest: '{{ _netdata_gz_run.path }}'
         force: true
 
